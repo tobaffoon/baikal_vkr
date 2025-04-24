@@ -1,0 +1,76 @@
+# Recipe to plot annual temperature of Baikal surface.
+---
+documentation:
+  title: Different models LST diagnostic
+  description: Plots mean anual LST for different models
+  authors:
+    - maziar_alexei
+
+datasets:
+  - dataset: "AWI-CM-1-1-MR"
+    project: "CMIP6"
+    mip: "Amon"
+    ensemble: "r1i1p1f1"
+    exp: "ssp126"
+    grid: "gn"
+    timerange: "2015/2024"
+  - dataset: "AWI-CM-1-1-MR"
+    project: "CMIP6"
+    mip: "Amon"
+    ensemble: "r1i1p1f1"
+    exp: "ssp370"
+    grid: "gn"
+    timerange: "2015/2024"
+  - dataset: "AWI-CM-1-1-MR"
+    project: "CMIP6"
+    mip: "Amon"
+    ensemble: "r1i1p1f1"
+    exp: "ssp585"
+    grid: "gn"
+    timerange: "2015/2024"
+  - dataset: "bcc-csm1-1-m"
+    project: "CMIP5"
+    mip: "Amon"
+    ensemble: "r1i1p1"
+    exp: "rcp26"
+    grid: "gn"
+    timerange: "2006/2024"
+  - dataset: "bcc-csm1-1-m"
+    project: "CMIP5"
+    mip: "Amon"
+    ensemble: "r1i1p1"
+    exp: "rcp45"
+    grid: "gn"
+    timerange: "2006/2024"
+  - dataset: "bcc-csm1-1-m"
+    project: "CMIP5"
+    mip: "Amon"
+    ensemble: "r1i1p1"
+    exp: "rcp85"
+    grid: "gn"
+    timerange: "2006/2024"
+
+preprocessors:
+  lst_preprocessor:
+    extract_shape:
+      shapefile: baikal.shp
+
+    area_statistics:
+      operator: mean
+
+    monthly_statistics:
+      operator: mean
+
+    convert_units:
+      units: degrees_C
+
+diagnostics:
+  timeseries:
+    description: Plots annual mean temperature of surface of Baikal
+    variables:
+      ts:
+        preprocessor: lst_preprocessor
+
+    scripts:
+      plot_trend:
+        script: scripts/plot_lst_trend.py

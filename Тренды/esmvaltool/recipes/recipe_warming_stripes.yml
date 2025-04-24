@@ -1,0 +1,53 @@
+# ESMValTool
+# recipe_warming_stripes.yml
+---
+documentation:
+  description: Reproducing Ed Hawkins' warming stripes visualization
+  authors:
+    - maziar_alexei
+  title: Reproducing Ed Hawkins' warming stripes visualization.
+
+datasets:
+  - dataset: BCC-ESM1
+    project: CMIP6
+    mip: Amon
+    exp: historical
+    ensemble: r1i1p1f1
+    grid: gn
+    timerange: "2001/*"
+
+preprocessors:
+  baikal_anomalies:
+    extract_shape:
+      shapefile: baikal.shp
+    area_statistics:
+      operator: mean
+    anomalies:
+      period: month
+      reference:
+        start_year: 2009
+        start_month: 1
+        start_day: 1
+        end_year: 2012
+        end_month: 12
+        end_day: 31
+      standardize: false
+
+diagnostics:
+  draw_stripes:
+    description: draws stripes of anomalies in monthly means in 2010,2011
+    variables:
+      baikal_temperature_anomalies_2010:
+        short_name: tas
+        preprocessor: baikal_anomalies
+        start_year: 2009
+        end_year: 2010
+      baikal_temperature_anomalies_2011:
+        short_name: tas
+        preprocessor: baikal_anomalies
+        start_year: 2010
+        end_year: 2011
+    scripts:
+      draw_stripes_script:
+        script: /mnt/D/NSU_VKR/esmvaltool_trend/scripts/warming_stripes.py
+        colormap: "bwr"
