@@ -9,12 +9,13 @@ represented by a standard deviation either side of the mean.
 
 import logging
 
-from pathlib import Path
+from datetime import date, timedelta
 
 import collections
 import iris
 import matplotlib.pyplot as plt
 import numpy as np
+
 from sklearn.linear_model import LinearRegression
 
 from esmvaltool.diag_scripts.shared import (
@@ -289,17 +290,27 @@ def _diagnostic(config):
    _plot_annual_mean_multiple(yt_dict_coll, colors, names, all_no_cap_path, check_years=False)
 
 def _get_average_annual_ts(ts_cube: iris.cube):
+   years = _get_cube_years(ts_cube)
    ts = {}
-   for year in set(ts_cube.coord("year").points):
+   for year in years:
       # calculate mean for each year once
       ts[int(year)] = _get_average_year_ts(ts_cube, year)
 
    return collections.OrderedDict(sorted(ts.items()))
 
+def _get_cube_years(ts_cube: iris.cube) -> list[int]:
+   years = set()
+   unit = ts_cube.coord("time").units
+   for entry in ts_cube.coord("time").points:
+      year = unit.num2pydate(entry).year
+      years.add(year)
+   logger.info(f"YEARS: {years}")
+   return list(years)
+
 def _get_average_year_ts(ts_cube: iris.cube, year: int):
    openwater_month_start = 6 # июнь
    openwater_month_end = 11 # ноябрь
-   warm_season_constraint = iris.Constraint(coord_values={"year": lambda y: y == year, "month_number": lambda m: openwater_month_start <= m < openwater_month_end})
+   warm_season_constraint = iris.Constraint(time=lambda cell: cell.point.year == year and openwater_month_start <= cell.point.month < openwater_month_end)
    ts_cube = warm_season_constraint.extract(ts_cube)
    return ts_cube.data.mean()
 
