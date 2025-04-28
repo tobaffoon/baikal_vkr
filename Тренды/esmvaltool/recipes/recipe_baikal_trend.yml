@@ -7,51 +7,37 @@ documentation:
     - maziar_alexei
 
 datasets:
-  - dataset: "AWI-CM-1-1-MR"
-    project: "CMIP6"
-    mip: "Amon"
-    ensemble: "r1i1p1f1"
-    exp: "ssp126"
-    grid: "gn"
-    timerange: "2015/2024"
-  - dataset: "AWI-CM-1-1-MR"
-    project: "CMIP6"
-    mip: "Amon"
-    ensemble: "r1i1p1f1"
-    exp: "ssp370"
-    grid: "gn"
-    timerange: "2015/2024"
-  - dataset: "AWI-CM-1-1-MR"
-    project: "CMIP6"
-    mip: "Amon"
-    ensemble: "r1i1p1f1"
-    exp: "ssp585"
-    grid: "gn"
-    timerange: "2015/2024"
-  - dataset: "bcc-csm1-1-m"
-    project: "CMIP5"
-    mip: "Amon"
-    ensemble: "r1i1p1"
-    exp: "rcp26"
-    grid: "gn"
-    timerange: "2006/2024"
-  - dataset: "bcc-csm1-1-m"
-    project: "CMIP5"
-    mip: "Amon"
-    ensemble: "r1i1p1"
-    exp: "rcp45"
-    grid: "gn"
-    timerange: "2006/2024"
-  - dataset: "bcc-csm1-1-m"
-    project: "CMIP5"
-    mip: "Amon"
-    ensemble: "r1i1p1"
-    exp: "rcp85"
-    grid: "gn"
-    timerange: "2006/2024"
+  - &cmip6 {
+      project: CMIP6,
+      mip: Amon,
+      exp: [historical, ssp126],
+      dataset: TaiESM1,
+      ensemble: r1i1p1f1,
+      grid: gn,
+      start_year: 1996,
+      end_year: 2025,
+    }
+  - { <<: *cmip6, exp: [historical, ssp370] }
+  - { <<: *cmip6, exp: [historical, ssp585] }
+
+  - &cmip5 {
+      dataset: bcc-csm1-1-m,
+      project: CMIP5,
+      mip: Amon,
+      ensemble: r1i1p1,
+      exp: [historical, rcp26],
+      start_year: 1996,
+      end_year: 2024,
+    }
+  - { <<: *cmip5, exp: [historical, rcp45] }
+  - { <<: *cmip5, exp: [historical, rcp85] }
 
 preprocessors:
-  lst_preprocessor:
+  ts_preprocessor:
+    regrid:
+      target_grid: 1x1
+      scheme: linear
+
     extract_shape:
       shapefile: baikal.shp
 
@@ -69,7 +55,7 @@ diagnostics:
     description: Plots annual mean temperature of surface of Baikal
     variables:
       ts:
-        preprocessor: lst_preprocessor
+        preprocessor: ts_preprocessor
 
     scripts:
       plot_trend:

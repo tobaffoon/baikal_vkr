@@ -299,6 +299,9 @@ def _get_average_annual_ts(ts_cube: iris.cube):
    return collections.OrderedDict(sorted(ts.items()))
 
 def _get_cube_years(ts_cube: iris.cube) -> list[int]:
+   found_year_coord = len(ts_cube.coords("year"))>0
+   if found_year_coord:
+      return set(ts_cube.coord("year").points)
    years = set()
    unit = ts_cube.coord("time").units
    for entry in ts_cube.coord("time").points:
