@@ -9,11 +9,10 @@ represented by a standard deviation either side of the mean.
 
 import logging
 
-from datetime import date, timedelta
-
 import collections
 import iris
 import matplotlib.pyplot as plt
+import matplotlib as mpl
 import numpy as np
 
 from sklearn.linear_model import LinearRegression
@@ -24,6 +23,8 @@ from esmvaltool.diag_scripts.shared import (
    group_metadata,
    run_diagnostic
 )
+
+mpl.rcParams['figure.dpi'] = 300
 
 logger = logging.getLogger(__name__)
 
@@ -78,6 +79,8 @@ def _plot_annual_mean_multiple(year_temp_dict_coll, colors, names, plot_save_pat
    if check_years:
       for d in year_temp_dict_coll:
          years = np.intersect1d(list(years), list(d.keys()))
+   else:
+      years = list(set([year for year_temp_dict in year_temp_dict_coll for year in year_temp_dict.keys()]))
 
 
    ax.set_xticks(np.array(years))
@@ -95,7 +98,7 @@ def _plot_annual_mean_multiple(year_temp_dict_coll, colors, names, plot_save_pat
          tss,
          linewidth=1.5,
          color=colors(i),
-         label=f"Данные {name}"
+         # label=f"Данные {name}"
       )
 
       ax.plot(
@@ -103,7 +106,8 @@ def _plot_annual_mean_multiple(year_temp_dict_coll, colors, names, plot_save_pat
          regressor.predict(regression_years),
          linewidth=0.5,
          color=colors(i, alpha=0.4),
-         label=f"Линейная регрессия {name}"
+         # label=f"Линейная регрессия {name}"
+         label=f"{name}"
       )
 
       if display_coef:
