@@ -16,6 +16,7 @@ import matplotlib as mpl
 import numpy as np
 
 from sklearn.linear_model import LinearRegression
+from scipy.stats import theilslopes
 
 from esmvaltool.diag_scripts.shared import (
    ProvenanceLogger,
@@ -54,7 +55,7 @@ def _get_input_cubes(metadata):
 
    return inputs, ancestors
 
-def _plot_annual_mean_multiple(year_temp_dict_coll, colors, names, plot_save_path, display_coef=False, check_years=True):
+def _plot_annual_mean_multiple(year_temp_dict_coll, colors, names, plot_save_path, display_coef=False, check_years=True, use_theil=False):
    """Create and save the output figure.
 
    The plot is just mean values of multiple models
@@ -70,8 +71,6 @@ def _plot_annual_mean_multiple(year_temp_dict_coll, colors, names, plot_save_pat
    fig, ax = plt.subplots()
    plt.gcf().set_size_inches(10, plt.gcf().get_size_inches()[1])
 
-   # ax.set_title('Baikal')
-   # fig.suptitle('ESACCI LST - CMIP6 Historical Ensemble Mean', fontsize=24)
    ax.set_xlabel('Год')
    ax.set_ylabel(r"Температура поверхностного слоя, ${\degree}C$")
 
@@ -82,7 +81,6 @@ def _plot_annual_mean_multiple(year_temp_dict_coll, colors, names, plot_save_pat
    else:
       years = list(set([year for year_temp_dict in year_temp_dict_coll for year in year_temp_dict.keys()]))
 
-
    ax.set_xticks(np.array(years))
    ax.tick_params(axis='x', labelrotation=300)
 
@@ -91,7 +89,27 @@ def _plot_annual_mean_multiple(year_temp_dict_coll, colors, names, plot_save_pat
       ys = [year for year in years if year in yt_dict]
       regression_years = np.array(ys).reshape(-1,1)
 
-      regressor = LinearRegression().fit(regression_years, tss)
+      if(use_theil):
+         coef, intercept, _, _ = theilslopes(tss, regression_years)
+
+         ax.plot(
+            ys,
+            intercept + coef * regression_years,
+            linewidth=0.5,
+            color=colors(i, alpha=0.4),
+            # label=f"Линейная регрессия {name}"
+         )
+      else:
+         regressor = LinearRegression().fit(regression_years, tss)
+         coef = regressor.coef_[0]
+
+         ax.plot(
+            ys,
+            regressor.predict(regression_years),
+            linewidth=0.5,
+            color=colors(i, alpha=0.4),
+            # label=f"Линейная регрессия {name}"
+         )
 
       ax.plot(
          ys,
@@ -99,22 +117,15 @@ def _plot_annual_mean_multiple(year_temp_dict_coll, colors, names, plot_save_pat
          linewidth=1.5,
          color=colors(i),
          # label=f"Данные {name}"
-      )
-
-      ax.plot(
-         ys,
-         regressor.predict(regression_years),
-         linewidth=0.5,
-         color=colors(i, alpha=0.4),
-         # label=f"Линейная регрессия {name}"
          label=f"{name}"
       )
+
 
       if display_coef:
          ax.text(
             x=0.815,
             y=0.95 - i*0.1,
-            s=f"$\it{{{name}: {regressor.coef_[0]:.2f}}}{{\degree}}C/год$",
+            s=f"$\it{{{name}: {coef:.2f}}}{{\degree}}C/год$",
             horizontalalignment='center',
             verticalalignment='top',
             transform = ax.transAxes,
@@ -124,7 +135,7 @@ def _plot_annual_mean_multiple(year_temp_dict_coll, colors, names, plot_save_pat
 
    plt.savefig(plot_save_path)
 
-def _plot_annual_mean(yt_dict, name, plot_save_path):
+def _plot_annual_mean(yt_dict, name, plot_save_path, use_theil=False):
    """Create and save the output figure.
 
    The plot is just mean values
@@ -137,8 +148,6 @@ def _plot_annual_mean(yt_dict, name, plot_save_path):
    fig, ax = plt.subplots()
    plt.gcf().set_size_inches(10, plt.gcf().get_size_inches()[1])
 
-   # ax.set_title('Baikal')
-   # fig.suptitle('ESACCI LST - CMIP6 Historical Ensemble Mean', fontsize=24)
    ax.set_xlabel('Год')
    ax.set_ylabel(r"Температура поверхностного слоя, ${\degree}C$")
 
@@ -156,21 +165,36 @@ def _plot_annual_mean(yt_dict, name, plot_save_path):
       tss,
       linewidth=1.5,
       color="black",
-      label=f"Данные {name}"
+      # label=f"Данные {name}"
+      label=f"{name}"
    )
 
-   ax.plot(
-      years,
-      regressor.predict(regression_years),
-      linewidth=0.5,
-      color="black",
-      label=f"Линейная регрессия {name}"
-   )
+   if(use_theil):
+      coef, intercept, _, _ = theilslopes(tss, regression_years)
+
+      ax.plot(
+         years,
+         intercept + coef * years,
+         linewidth=0.5,
+         color="black",
+         # label=f"Линейная регрессия {name}"
+      )
+   else:
+      regressor = LinearRegression().fit(regression_years, tss)
+      coef = regressor.coef_[0]
+
+      ax.plot(
+         years,
+         regressor.predict(regression_years),
+         linewidth=0.5,
+         color="black",
+         # label=f"Линейная регрессия {name}"
+      )
 
    ax.text(
-      x=0.815,
+      x=0.9,
       y=0.95,
-      s=f"$\it{{{name}: {regressor.coef_[0]:.2f}}}{{\degree}}C/год$",
+      s=f"$\it{{Тренд: {coef:.2f}}}{{\degree}}C/год$",
       horizontalalignment='center',
       verticalalignment='top',
       transform = ax.transAxes,
@@ -207,7 +231,13 @@ def _get_provenance_record(attributes, ancestor_files):
    return record
 
 def _prepare_landsat():
-   lst_landsat = { 1996: 7.615046916830711,
+   lst_landsat = { 1990: 9.879765511679397,
+ 1991: 8.954173718890887,
+ 1992: 4.1181207001714135,
+ 1993: 10.058721180744957,
+ 1994: 9.22601766201506,
+ 1995: 7.868444791330705,
+ 1996: 7.615046916830711,
  1997: 6.4652446881016505,
  1998: 8.29735257295523,
  1999: 7.466276454270664,
@@ -282,16 +312,16 @@ def _diagnostic(config):
 
          solo_plot_path = get_plot_filename(exp, config)
          landsat_plot_path = get_plot_filename(f"{exp}_Landsat_comparison", config)
-         _plot_annual_mean(year_ts_dict, exp, solo_plot_path)
-         _plot_annual_mean_multiple([yt_dict_landsat, year_ts_dict], two_cm, ["Landsat", exp], landsat_plot_path)
+         _plot_annual_mean(year_ts_dict, exp, solo_plot_path, use_theil=True)
+         _plot_annual_mean_multiple([yt_dict_landsat, year_ts_dict], two_cm, ["Landsat", exp], landsat_plot_path, use_theil=True)
 
          provenance_logger.log(solo_plot_path, record)
    
    colors = plt.get_cmap('gist_rainbow', len(yt_dict_coll))
    all_path = get_plot_filename("all_experiments", config)
    all_no_cap_path = get_plot_filename("all_experiments_no_year_limit", config)
-   _plot_annual_mean_multiple(yt_dict_coll, colors, names, all_path)
-   _plot_annual_mean_multiple(yt_dict_coll, colors, names, all_no_cap_path, check_years=False)
+   _plot_annual_mean_multiple(yt_dict_coll, colors, names, all_path, use_theil=True)
+   # _plot_annual_mean_multiple(yt_dict_coll, colors, names, all_no_cap_path, check_years=False, use_theil=True)
 
 def _get_average_annual_ts(ts_cube: iris.cube):
    years = _get_cube_years(ts_cube)
