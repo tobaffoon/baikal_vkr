@@ -192,9 +192,9 @@ def _plot_annual_mean(yt_dict, name, plot_save_path, use_theil=False):
       )
 
    ax.text(
-      x=0.9,
-      y=0.95,
-      s=f"$\it{{Тренд: {coef:.2f}}}{{\degree}}C/год$",
+      x=0.5,
+      y=0.97,
+      s=f"$\it{{Тренд: {coef:.6f}}}{{\degree}}C/год$",
       horizontalalignment='center',
       verticalalignment='top',
       transform = ax.transAxes,
