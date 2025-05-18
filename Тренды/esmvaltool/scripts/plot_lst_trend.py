@@ -71,8 +71,8 @@ def _plot_annual_mean_multiple(year_temp_dict_coll, colors, names, plot_save_pat
    fig, ax = plt.subplots()
    plt.gcf().set_size_inches(10, plt.gcf().get_size_inches()[1])
 
-   ax.set_xlabel('Год')
-   ax.set_ylabel(r"Температура поверхностного слоя, ${\degree}C$")
+   ax.set_xlabel('Год', fontsize=13)
+   ax.set_ylabel(r"Температура поверхностного слоя, ${\degree}C$", fontsize=13)
 
    years = list(year_temp_dict_coll[0].keys())
    if check_years:
@@ -95,9 +95,9 @@ def _plot_annual_mean_multiple(year_temp_dict_coll, colors, names, plot_save_pat
          ax.plot(
             ys,
             intercept + coef * regression_years,
-            linewidth=0.5,
-            color=colors(i, alpha=0.4),
-            # label=f"Линейная регрессия {name}"
+            linewidth=1.75,
+            color=colors(i),
+            label=f"{name}: $\it{{{coef:.4f}}}{{\degree}}C/год$"
          )
       else:
          regressor = LinearRegression().fit(regression_years, tss)
@@ -106,34 +106,35 @@ def _plot_annual_mean_multiple(year_temp_dict_coll, colors, names, plot_save_pat
          ax.plot(
             ys,
             regressor.predict(regression_years),
-            linewidth=0.5,
-            color=colors(i, alpha=0.4),
-            # label=f"Линейная регрессия {name}"
+            linewidth=1.75,
+            color=colors(i),
+            label=f"{name}: $\it{{{coef:.4f}}}{{\degree}}C/год$"
          )
 
       ax.plot(
          ys,
          tss,
-         linewidth=1.5,
-         color=colors(i),
+         linewidth=1,
+         color=colors(i, alpha=0.4),
          # label=f"Данные {name}"
-         label=f"{name}"
       )
-
 
       if display_coef:
          ax.text(
             x=0.815,
             y=0.95 - i*0.1,
-            s=f"$\it{{{name}: {coef:.2f}}}{{\degree}}C/год$",
+            s=f"$\it{{{name}: {coef:.4f}}}{{\degree}}C/год$",
             horizontalalignment='center',
             verticalalignment='top',
             transform = ax.transAxes,
             bbox=dict(facecolor='white', alpha=0.2))
       
-   ax.legend(loc="upper left", fontsize=6)
+   legend = ax.legend(loc="lower right", fontsize=10)
 
-   plt.savefig(plot_save_path)
+   for line in legend.get_lines():
+      line.set_linewidth(5)
+
+   plt.savefig(plot_save_path, bbox_inches='tight')
 
 def _plot_annual_mean(yt_dict, name, plot_save_path, use_theil=False):
    """Create and save the output figure.
@@ -289,7 +290,15 @@ def _diagnostic(config):
 
    ancestor_list = []
    yt_dict_coll = [yt_dict_landsat]
-   names = ["landsat"]
+   names = ["LST_sob"]
+   exp_name_dict = {
+      "historical-rcp26": "RCP2.6",
+      "historical-rcp45": "RCP4.5",
+      "historical-rcp85": "RCP8.5",
+      "historical-ssp126": "SSP1-2.6",
+      "historical-ssp245": "SSP2-4.5",
+      "historical-ssp585": "SSP5-8.5",
+   }
    with ProvenanceLogger(config) as provenance_logger:
       for exp, metadata in group_metadata(input_metadata, 'exp').items():
          cubes, ancestors = _get_input_cubes(metadata)
@@ -297,7 +306,7 @@ def _diagnostic(config):
          year_ts_dict = _get_average_annual_ts(ts_cube)
 
          yt_dict_coll.append(year_ts_dict)
-         names.append(exp)
+         names.append(exp_name_dict[exp])
          
          # Provenance
          ancestor_list.append(ancestors['ts'][0]) 
