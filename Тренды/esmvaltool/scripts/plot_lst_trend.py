@@ -92,13 +92,22 @@ def _plot_annual_mean_multiple(year_temp_dict_coll, colors, names, plot_save_pat
       if(use_theil):
          coef, intercept, _, _ = theilslopes(tss, regression_years)
 
-         ax.plot(
-            ys,
-            intercept + coef * regression_years,
-            linewidth=1.75,
-            color=colors(i),
-            label=f"{name}: $\it{{{coef:.4f}}}{{\degree}}C/год$"
-         )
+         if('LST' in name):
+            ax.plot(
+               ys,
+               intercept + coef * regression_years,
+               linewidth=2.5,
+               color=colors(i),
+               label= name + ": " + fr"$\bf{{{coef:.4f}}}{{\degree}}C/год$"
+            )
+         else:
+            ax.plot(
+               ys,
+               intercept + coef * regression_years,
+               linewidth=1.75,
+               color=colors(i),
+               label=f"{name}: $\it{{{coef:.4f}}}{{\degree}}C/год$"
+            )
       else:
          regressor = LinearRegression().fit(regression_years, tss)
          coef = regressor.coef_[0]
@@ -290,7 +299,7 @@ def _diagnostic(config):
 
    ancestor_list = []
    yt_dict_coll = [yt_dict_landsat]
-   names = ["LST_sob"]
+   names = [r"$\bf{LST_{sob}}$"]
    exp_name_dict = {
       "historical-rcp26": "RCP2.6",
       "historical-rcp45": "RCP4.5",
@@ -322,7 +331,7 @@ def _diagnostic(config):
          solo_plot_path = get_plot_filename(exp, config)
          landsat_plot_path = get_plot_filename(f"{exp}_Landsat_comparison", config)
          _plot_annual_mean(year_ts_dict, exp, solo_plot_path, use_theil=True)
-         _plot_annual_mean_multiple([yt_dict_landsat, year_ts_dict], two_cm, ["Landsat", exp], landsat_plot_path, use_theil=True)
+         _plot_annual_mean_multiple([yt_dict_landsat, year_ts_dict], two_cm, [r"$\bf{LST_{sob}}$", exp], landsat_plot_path, use_theil=True)
 
          provenance_logger.log(solo_plot_path, record)
    
