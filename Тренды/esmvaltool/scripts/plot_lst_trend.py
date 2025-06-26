@@ -14,6 +14,7 @@ import iris
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 import numpy as np
+import locale
 
 from sklearn.linear_model import LinearRegression
 from scipy.stats import theilslopes
@@ -26,6 +27,14 @@ from esmvaltool.diag_scripts.shared import (
 )
 
 mpl.rcParams['figure.dpi'] = 300
+# mpl.rcParams['mathtext.fontset'] = 'custom'
+# mpl.rcParams['mathtext.rm'] = 'Times New Roman'
+# mpl.rcParams['mathtext.it'] = 'Times New Roman:italic'
+# mpl.rcParams['font.family'] = 'Times New Roman'
+# mpl.rcParams['font.size'] = '16'
+# mpl.rcParams['axes.formatter.use_locale'] = True
+
+# locale.setlocale(locale.LC_NUMERIC, "de_DE")
 
 logger = logging.getLogger(__name__)
 
@@ -81,32 +90,36 @@ def _plot_annual_mean_multiple(year_temp_dict_coll, colors, names, plot_save_pat
    else:
       years = list(set([year for year_temp_dict in year_temp_dict_coll for year in year_temp_dict.keys()]))
 
+   display_years = [year for year in years if year >= 1993] # filter for final pres
    ax.set_xticks(np.array(years))
    ax.tick_params(axis='x', labelrotation=300)
 
    for i, (yt_dict, name) in enumerate(zip(year_temp_dict_coll, names)):
       tss = [yt_dict[year] for year in years if year in yt_dict]
+      display_tss = [yt_dict[year] for year in display_years if year in yt_dict]
       ys = [year for year in years if year in yt_dict]
+      display_ys = [year for year in display_years if year in yt_dict]
       regression_years = np.array(ys).reshape(-1,1)
+      display_regression_years = np.array(display_ys).reshape(-1,1)
 
       if(use_theil):
          coef, intercept, _, _ = theilslopes(tss, regression_years)
 
          if('LST' in name):
             ax.plot(
-               ys,
-               intercept + coef * regression_years,
+               display_ys,
+               intercept + coef * display_regression_years,
                linewidth=2.5,
                color=colors(i),
-               label= name + ": " + fr"$\bf{{{coef:.4f}}}{{\degree}}C/год$"
+               label= name + ": " + fr"$\bf{{{coef:.4f}}}\ {{\degree}}C/год$"
             )
          else:
             ax.plot(
-               ys,
-               intercept + coef * regression_years,
+               display_ys,
+               intercept + coef * display_regression_years,
                linewidth=1.75,
                color=colors(i),
-               label=f"{name}: $\it{{{coef:.4f}}}{{\degree}}C/год$"
+               label=f"{name}: $\it{{{coef:.4f}}}\ {{\degree}}C/год$"
             )
       else:
          regressor = LinearRegression().fit(regression_years, tss)
@@ -117,12 +130,12 @@ def _plot_annual_mean_multiple(year_temp_dict_coll, colors, names, plot_save_pat
             regressor.predict(regression_years),
             linewidth=1.75,
             color=colors(i),
-            label=f"{name}: $\it{{{coef:.4f}}}{{\degree}}C/год$"
+            label=f"{name}: $\it{{{coef:.4f}}}\ {{\degree}}C/год$"
          )
 
       ax.plot(
-         ys,
-         tss,
+         display_ys,
+         display_tss,
          linewidth=1,
          color=colors(i, alpha=0.4),
          # label=f"Данные {name}"
